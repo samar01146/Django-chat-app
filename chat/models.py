@@ -1,12 +1,10 @@
 from django.db import models
+from authentication.models import *
 
-# Create your models here.
-STATUS_CHOICE = (
-        ('online', 'online'),
-        ('offline', 'offline'),
-    )
-
-class User(models.Model):
-    name = models.CharField(max_length=100, null=True, blank=True)
-    photo = models.ImageField(upload_to="profile", null=True, blank=True)
-    status = models.CharField(max_length=8, choices=STATUS_CHOICE)
+class ChatBox(models.Model):
+    senders_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    reciepients_user = models.CharField(max_length=100, null=True, blank=True)
+    mytimestamp = models.DateField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.username

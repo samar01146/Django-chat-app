@@ -1,0 +1,39 @@
+{% load static %}
+{% block title %} Signup {% endblock %}
+
+<!--Stylesheet-->
+{% block css %}
+<link rel="stylesheet" href="{% static 'auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="background">
+    <div class="shape"></div>
+    <div class="shape"></div>
+</div>
+<form action="" method="post">
+    {% csrf_token %}
+    <h3>Login Here</h3>
+    <br>
+    {% if message %}
+    <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+        <strong class="me-auto">error!</strong>
+        <small>..{{message}}</small>
+    </div>
+    </div>
+    {% endif %}
+    <label for="username">Username</label>
+    <input  type="text" name="username" placeholder="username" id="username">
+
+    <label for="password">Password</label>
+    <input  type="password" name="password" placeholder="Password" id="password">
+
+    <button>Log In</button>
+    <br>
+    <span>New Register??.....</span>
+    <a class="btn btn-primary" href="/auth/signup">Signup</a>
+
+</form>
+
+{% endblock %}

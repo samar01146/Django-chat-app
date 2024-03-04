@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
-{% block title %} Home {% endblock %}
+{% load static %}
+{% block title %} Chat {% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'base.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="container">
 <div class="row clearfix">
@@ -15,9 +20,13 @@
                 <ul class="list-unstyled chat-list mt-2 mb-0">
                     {% for i in my_contact_lists %}
                     <li class="clearfix active ProfileData")>
+                        {% if i.photo %}
                         <img src={{i.photo.url}} alt="avatar">
+                        {% else %}
+                        <img src={{i.photo}} alt="avatar">
+                        {% endif %}
                         <div class="about">
-                            <div class="name">{{i.name}}</div>
+                            <div class="name">{{i.username}}</div>
                             {% if i.status == "online" %}
                             <div class="status"> <i class="fa fa-circle online"></i> {{i.status}} </div>
                             {% else %}
@@ -33,10 +42,14 @@
                     <div class="row">
                         <div class="col-lg-6">
                             <a href="javascript:void(0);" data-toggle="modal" data-target="#view_info" id="ProfileImage">
+                                {% if first_obj.photo %}
                                 <img src="{{first_obj.photo.url}}" alt="avatar">
+                                 {% else %}
+                                <img src={{first_obj.photo}} alt="avatar">
+                                {% endif %}
                             </a>
                             <div class="chat-about">
-                                <h6 class="m-b-0">{{first_obj.name}}</h6>
+                                <h6 class="m-b-0">{{first_obj.username}}</h6>
                                 <small>{{first_obj.status}}</small>
                             </div>
                         </div>
@@ -49,8 +62,8 @@
                     </div>
                 </div>
                 <div class="chat-history">
-                    <ul class="m-b-0">
-                        <li class="clearfix">
+                    <ul class="m-b-0" id="ChatBoxMessage">
+                        {% comment %} <li class="clearfix">
                             <div class="message other-message float-right"> Hi Aiden, how are you? How is the project coming along? </div>
                         </li>
                         <li class="clearfix">
@@ -58,15 +71,15 @@
                                 <span class="message-data-time">10:12 AM, Today</span>
                             </div>
                             <div class="message my-message">Are we meeting today?</div>                                    
-                        </li>                               
+                        </li>                                {% endcomment %}
                     </ul>
                 </div>
                 <div class="chat-message clearfix">
                     <div class="input-group mb-0">
                         <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="fa fa-send"></i></span>
+                            <span class="input-group-text"><i class="fa fa-send" id="send-btn"></i></span>
                         </div>
-                        <input type="text" class="form-control" placeholder="Enter text here...">                                    
+                        <input type="text" id="textMessage" class="form-control" placeholder="Enter text here...">                                    
                     </div>
                 </div>
             </div>
@@ -77,7 +90,7 @@
 {% endblock %}
 {% block js_script %}
 <script>
-
+sessionStorage.setItem("reciever_name", "{{first_obj.username}}");
 document.addEventListener("DOMContentLoaded", function() {
     var profileDataItems = document.querySelectorAll(".ProfileData");
     var ChatBox = document.getElementsByClassName("chat-about")[0];
@@ -85,8 +98,8 @@ document.addEventListener("DOMContentLoaded", function() {
     var ProfileImgsrc = ProfileImg.getElementsByTagName("img")[0]
     profileDataItems.forEach(function(item) {
         item.addEventListener('click', function() {
-                myfuncdata()
                 var name = item.getElementsByClassName("name")[0].textContent
+                sessionStorage.setItem("reciever_name", name);
                 var status = item.getElementsByClassName("status")[0].textContent
                 var image = item.getElementsByTagName("img")[0].getAttribute('src')
                 ChatBox.innerHTML = `<h6 class="m-b-0">${name}</h6><small>${status}</small>`
@@ -94,5 +107,51 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     });
 });
+my_name = sessionStorage.setItem("my_name", "{{request.user.username}}");
+var roomNameSession = sessionStorage['my_name']+sessionStorage['reciever_name']
+var roomNameSet = (new Set(roomNameSession))
+var roomName = [...roomNameSet].join("");
+console.log(roomName)
+
+    const chatSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/chat/' 
+        + roomName + '/'
+    );
+    console.log(chatSocket, "::::::::::::::::::::socket")
+
+    // on socket open
+    chatSocket.onopen = function (e) {
+        console.log('Chat socket successfully connected.');
+    };
+
+    // on socket close
+    chatSocket.onclose = function (e) {
+        console.log('Chat socket closed unexpectedly');
+    };
+
+    chatSocket.onmessage = function(e) {
+        console.log("on_message", "______________")
+        const data = JSON.parse(e.data);
+        const message = data.message;
+        setMessage(message);
+    };
+    document.querySelector('#send-btn').onclick = function(e) {
+            const messageInputDom = document.querySelector('#textMessage');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                message
+            }));
+            
+            messageInputDom.value = '';
+    };
+    function setMessage(message){
+        var chat_message = document.getElementById("ChatBoxMessage")
+        const li = document.createElement("li");
+        li.classList.add("clearfix")
+        li.innerHTML = `<div class='message other-message float-right'>${message}</div>`
+        chat_message.appendChild(li);
+    }
 </script>
 {% endblock %}
