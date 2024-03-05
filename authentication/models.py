@@ -7,6 +7,7 @@ STATUS_CHOICE = (
         ('offline', 'offline'),
     )
 class CustomUser(AbstractUser):
+    id = models.IntegerField(primary_key=True)
     photo = models.ImageField(upload_to="profile", null=True, blank=True)
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=8, choices=STATUS_CHOICE, default="online")

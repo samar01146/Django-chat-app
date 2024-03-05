@@ -8,4 +8,5 @@ from .views import *
  
 urlpatterns = [
     path('', chat, name='chat'),
-]   
+    path('create_room/', CreateRoom, name='create_room'),
+]

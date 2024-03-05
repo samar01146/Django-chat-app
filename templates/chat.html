@@ -63,15 +63,15 @@
                 </div>
                 <div class="chat-history">
                     <ul class="m-b-0" id="ChatBoxMessage">
-                        {% comment %} <li class="clearfix">
-                            <div class="message other-message float-right"> Hi Aiden, how are you? How is the project coming along? </div>
-                        </li>
-                        <li class="clearfix">
-                            <div class="message-data">
-                                <span class="message-data-time">10:12 AM, Today</span>
-                            </div>
-                            <div class="message my-message">Are we meeting today?</div>                                    
-                        </li>                                {% endcomment %}
+                            {% comment %} <li class="clearfix">
+                                <div class="message other-message float-right"> Hi Aiden, how are you? How is the project coming along? </div>
+                            </li>
+                            <li class="clearfix">
+                                <div class="message-data">
+                                    <span class="message-data-time">10:12 AM, Today</span>
+                                </div>
+                                <div class="message my-message">Are we meeting today?</div>                                    
+                            </li>                                {% endcomment %}
                     </ul>
                 </div>
                 <div class="chat-message clearfix">
@@ -90,35 +90,42 @@
 {% endblock %}
 {% block js_script %}
 <script>
-sessionStorage.setItem("reciever_name", "{{first_obj.username}}");
+function callAjax(receiver_name){
+    var sender_name = "{{ request.user.username }}";
+    var data = { "sender_name": sender_name, "receiver_name": receiver_name };
+    $.ajax({
+        type: "GET",
+        url: '{% url "create_room" %}',
+        data: data,
+        success: function(response) {   
+            sessionStorage.setItem("room_id",response['token'])
+        },
+        error: function(xhr, status, error) {
+            console.error("Error:", error);
+        }
+    });
+}
 document.addEventListener("DOMContentLoaded", function() {
     var profileDataItems = document.querySelectorAll(".ProfileData");
     var ChatBox = document.getElementsByClassName("chat-about")[0];
     var ProfileImg = document.getElementById("ProfileImage");
     var ProfileImgsrc = ProfileImg.getElementsByTagName("img")[0]
     profileDataItems.forEach(function(item) {
-        item.addEventListener('click', function() {
-                var name = item.getElementsByClassName("name")[0].textContent
-                sessionStorage.setItem("reciever_name", name);
-                var status = item.getElementsByClassName("status")[0].textContent
-                var image = item.getElementsByTagName("img")[0].getAttribute('src')
-                ChatBox.innerHTML = `<h6 class="m-b-0">${name}</h6><small>${status}</small>`
-                ProfileImgsrc.src = image
-            });
+    item.addEventListener('click', function() {
+            var name = item.getElementsByClassName("name")[0].textContent
+            callAjax(name)            
+            var status = item.getElementsByClassName("status")[0].textContent
+            var image = item.getElementsByTagName("img")[0].getAttribute('src')
+            ChatBox.innerHTML = `<h6 class="m-b-0">${name}</h6><small>${status}</small>`
+            ProfileImgsrc.src = image
+        });
     });
 });
-my_name = sessionStorage.setItem("my_name", "{{request.user.username}}");
-var roomNameSession = sessionStorage['my_name']+sessionStorage['reciever_name']
-var roomNameSet = (new Set(roomNameSession))
-var roomName = [...roomNameSet].join("");
-console.log(roomName)
-
-    const chatSocket = new WebSocket(
-        'ws://'
-        + window.location.host
-        + '/ws/chat/' 
-        + roomName + '/'
-    );
+{% comment %} var roomName = sessionStorage['room_id'] {% endcomment %}
+var roomName = sessionStorage['room_id'];
+const chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+);
     console.log(chatSocket, "::::::::::::::::::::socket")
 
     // on socket open
@@ -132,7 +139,7 @@ console.log(roomName)
     };
 
     chatSocket.onmessage = function(e) {
-        console.log("on_message", "______________")
+        console.log(e, "__________________E")
         const data = JSON.parse(e.data);
         const message = data.message;
         setMessage(message);
@@ -140,8 +147,10 @@ console.log(roomName)
     document.querySelector('#send-btn').onclick = function(e) {
             const messageInputDom = document.querySelector('#textMessage');
             const message = messageInputDom.value;
+            const user = "{{request.user.username}}"
+            const room_id = sessionStorage['room_id']
             chatSocket.send(JSON.stringify({
-                message
+                message, user, room_id
             }));
             
             messageInputDom.value = '';
