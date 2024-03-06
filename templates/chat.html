@@ -141,6 +141,7 @@ const chatSocket = new WebSocket(
     chatSocket.onmessage = function(e) {
         console.log(e, "__________________E")
         const data = JSON.parse(e.data);
+        console.log("_____________________data", data)
         const message = data.message;
         setMessage(message);
     };
